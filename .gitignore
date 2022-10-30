@@ -129,7 +129,8 @@ dmypy.json
 .pyre/
 
 # Scripts and company
-api.txt
+Pandas.ipynb
 
 # Text Files
 *.csv
+*.txt

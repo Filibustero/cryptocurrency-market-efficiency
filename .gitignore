@@ -131,6 +131,7 @@ dmypy.json
 # Scripts and company
 Pandas.ipynb
 
-# Text Files
+# Files
 *.csv
 *.txt
+*.xlsx

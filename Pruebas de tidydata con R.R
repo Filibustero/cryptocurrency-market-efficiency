@@ -188,5 +188,9 @@ for(file in files){
 
 dflista <- list(df_1inch,df_aave)
 
+## Generar una lista con los objetos del environment
+
+environmentlist <- ls()
+
 df_merged <- reduce(dflista, full_join, by = "time")
 

@@ -142,7 +142,10 @@ for(file in files){
   #assign(dfnames, dataframe)
 }
 
-final_df <- full_join(df_1inch, df_aave, by = "time")
+dflista <- list(df_1inch,df_aave)
+
+df_merged <- reduce(dflista, full_join, by = "time")
+
 
 ### Probar todos los CSVs del directorio del TFM
 rm(list=ls())
@@ -151,7 +154,7 @@ setwd("/home/filibustero/Documentos/TFM/cryptocurrency-market-efficiency/csv2210
 
 files <- dir(pattern = "*.csv")
 
-df_list <- list()
+dflist <- list()
 nombres = list()
 
 for(file in files){
@@ -183,6 +186,7 @@ for(file in files){
   #assign(dfnames, dataframe)
 }
 
-df_merged <- reduce(df_list, full_join, by = "time")
-final_df <- full_join(df_1inch, df_aave, by = "time")
+dflista <- list(df_1inch,df_aave)
+
+df_merged <- reduce(dflista, full_join, by = "time")
 

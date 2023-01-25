@@ -6,6 +6,7 @@ library("fs") #para ubicar el directorio de los csv
 library("lubridate") #bucle for
 library("purrr") #fulljoin method
 library("stringr") #environmentlist filter
+library("openxlsx") #exportar datos
 
 ## Directorios de los archivos ----
 setwd("/home/filibustero/Documentos/TFM/cryptocurrency-market-efficiency/csv221022") # TFM
@@ -57,4 +58,6 @@ df_final$time <- as.Date(df_final$time, format = "%Y-%m-%d")
 df_final <- arrange(df_final, time)
 
 ## Exportar datos: .Rdat, XLSX y CSV ----
-
+save(df_final, file = "df_final.RDat")
+write.csv(df_final, file = "df_final.csv")
+write_csv(df_final, "df_final.csv")

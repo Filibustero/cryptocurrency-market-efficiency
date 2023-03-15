@@ -163,20 +163,30 @@ environmentlist <- Filter(is.data.frame, mget(ls()))
 environmentlist <- lapply(environmentlist, function(x) arrange(x, time))
 
 ## Juntar todos los dataframes en uno solo
-df_final <- reduce(environmentlist, full_join, by = "time")
+criptomonedas <- reduce(environmentlist, full_join, by = "time")
 
 ## Cambiar el formato de la fecha
-df_final$time <- as.Date(df_final$time, format = "%Y-%m-%d")
+criptomonedas$time <- as.Date(criptomonedas$time, format = "%Y-%m-%d")
 
 ## Ordenar fechas del dataframe final
-df_final <- arrange(df_final, time)
+criptomonedas <- arrange(criptomonedas, time)
 
 ## Exportar datos: .Rdat, XLSX y CSV
-save(df_final, file = "df_final.RDat")
-write.csv(df_final, file = "df_final.csv")
-write.xlsx(df_final, file = "df_final.xlsx")
+
+if ("criptomonedas.xlsx" %in% dir()) {
+  print(paste("No es necesario crear el XLSX, está en:", getwd()))
+} else {
+  write.xlsx(criptomonedas, file = "criptomonedas.xlsx")
+  print(paste("Se ha guardado el archivo en:", as.character(getwd()) ))
+}
 
 
+## Montar el dataframe con los rendimientos logarítmicos ----
+# Calcular rendimientos logarítmicos
+rendimientos <- apply(log(criptomonedas), 2, diff) * 100 / df[-1, ]
+
+# Resultados
+head(rendimientos)
 
 
 

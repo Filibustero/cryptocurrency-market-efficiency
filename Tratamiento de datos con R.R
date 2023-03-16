@@ -1,6 +1,3 @@
-# TRATAMIENTO DE DATOS TRAS PERCATARNOS DEL ERROR DE LAS COLUMNAS:
-## Faltan columnas
-
 ## Librerias ----
 library("dplyr")
 library("readr")
@@ -11,6 +8,8 @@ library("purrr") #fulljoin method
 library("stringr") #environmentlist filter
 library("readr") #exportar csv
 library("openxlsx") #exportarxlsx
+library("e1071") #estadisticos
+library("tseries") #estadisticos
 
 
 ## Directorios de los archivos ----
@@ -21,7 +20,10 @@ setwd("/home/filibustero/Documentos/TFM/cryptocurrency-market-efficiency/csv0702
 files <- dir(pattern = "*.csv")
 
 ## Crear un objeto por cada csv y una lista con todos los nombres ----
+nombres <- list()
 for(file in files){
+  dummy <- as.character(gsub("\\.csv$", "", file))
+  nombres <- append(nombres, dummy)
   ## Primero montar los dataframes
   dataframe <- read.csv(file, stringsAsFactors = FALSE)
   for(col in colnames(dataframe)){#checknombrecolumna
@@ -33,9 +35,9 @@ for(file in files){
  }
 }
 
-## Eliminar los dataframes residuales del bucle anterior del environment ------
+## Eliminar los dataframes residuales del bucle anterior del environment
   ## No es necesario hacerlo pero lo prefiero por orden
-rm(col, dfnames_final, dfnames2, file, files, prefijo)
+rm(col, dfnames_final, dfnames2, file, files, prefijo, dummy)
 
 ## Crear un objeto donde se almacenen los objetos creados en el loop anterior ----
 objetosenvironment <- ls(pattern = "^df_")
@@ -130,6 +132,7 @@ setwd("/home/filibustero/Documentos/TFM/cryptocurrency-market-efficiency/csv0702
 files <- dir(pattern = "*.csv")
 
 ## Bucle que crea objetos diferentes para cada CSV
+nombres2 <- list()
 for(file in files){
   dataframe <- read.csv(file, stringsAsFactors = FALSE)
   for(col in colnames(dataframe)){#checknombrecolumna
@@ -141,6 +144,7 @@ for(file in files){
       dataframe2 <- dataframe2[c("time", "ReferenceRateUSD")]
       ## Configurar el nombre del objeto a "df_file"
       dfnames2 <- as.character(gsub("\\.csv$", "", file))
+      nombres2 <- append(nombres2, dfnames2)
       prefijo <- as.character("df_")
       dfnames_final <- paste(c(prefijo, dfnames2), collapse = "")
       ## Cambiar el nombre de la columna "ReferenceRateUSD"
@@ -180,73 +184,63 @@ if ("criptomonedas.xlsx" %in% dir()) {
   print(paste("Se ha guardado el archivo en:", as.character(getwd()) ))
 }
 
+## Eliminar la columna time al utilizarla como rownames
+rownames(criptomonedas) <- criptomonedas[,1]
+criptomonedas <- criptomonedas[, -1]
+
 
 ## Montar el dataframe con los rendimientos logarítmicos ----
-# Calcular rendimientos logarítmicos
-rendimientos <- apply(log(criptomonedas), 2, diff) * 100 / df[-1, ]
 
-# Resultados
-head(rendimientos)
-
-
-
-
-
-
-# TRABAJO PREVIO AL DESCUBRIMIENTO DEL ERROR ----
-
-
-
-## Directorios de los archivos
-setwd("/home/filibustero/Documentos/TFM/cryptocurrency-market-efficiency/csv221022") # TFM
-#setwd("/home/filibustero/Documentos/R/Pruebas/Pruebas/tfm") # Muestra
-
-## Lectura del directorio en busca de CSV
-files <- dir(pattern = "*.csv")
-
-## Bucle que crea objetos diferentes para cada CSV
-for(file in files){
-  dataframe <- read.csv(file, stringsAsFactors = FALSE)
-  for(col in colnames(dataframe)){#checknombrecolumna
-    if(col != "PriceUSD"){
-    }
-    else{
-      ## Primero montar los dataframes y elegir solo dos columnas
-      dataframe2 <- read.csv(file, stringsAsFactors = FALSE)
-      dataframe2 <- dataframe2[c("time", "PriceUSD")]
-      ## Configurar el nombre del objeto a "df_file"
-      dfnames2 <- as.character(gsub("\\.csv$", "", file))
-      prefijo <- as.character("df_")
-      dfnames_final <- paste(c(prefijo, dfnames2), collapse = "")
-      ## Cambiar el nombre de la columna "PriceUSD"
-      prefijo = "Price"
-      dfcolnames <- paste(c(prefijo, dfnames2), collapse = "")
-      colnames(dataframe2)[colnames(dataframe2) == "PriceUSD"] <- dfcolnames
-      ## Formar el objeto
-      assign(dfnames_final, dataframe2)
-    }
-  }
+## Creación de una función que haga el rendimiento logarítmico
+tologreturns <- function(x) {
+  return(log(x / lag(x, n = 1))* 100)
 }
 
-## Eliminar los dataframes residuales del bucle anterior del environment
-rm(dataframe, dataframe2, col, dfcolnames, dfnames_final, dfnames2, file, prefijo)
+## Calcular rendimientos logarítmicos
+  ## margin = 2 para seleccionar las columnas 
+rendimientos <- as.data.frame(apply(criptomonedas, 2, function(x) tologreturns(x)))
 
-## Generar una lista con los objetos del environment que son un dataframe
-environmentlist <- Filter(is.data.frame, mget(ls()))
+## Descriptivo de todos los activos ----
+# Función para obtener estadísticos
 
-## Ordenar las fechas de los dataframes
-environmentlist <- lapply(environmentlist, function(x) arrange(x, time))
+analisisdescriptivo <- function(x) {
+  x <- na.omit(x) #omitir NA
+  JarqueBera <- jarque.bera.test(x)
+  JarqueBera <- JarqueBera$p.value
+  estadisticos <- data.frame(
+    "N" = length(x),
+    "Media" = mean(x),
+    "Standard Deviation" = sd(x),
+    "Variance" = var(x),
+    "Min" = min(x),
+    "Max" = max(x),
+    "Skewness" = skewness(x),
+    "Kurtosis" = kurtosis(x),
+    "Jarque Bera p value" = JarqueBera)
+  return(estadisticos)
+}
 
-## Juntar todos los dataframes en uno solo
-df_final <- reduce(environmentlist, full_join, by = "time")
+## Guardar los nombres de las columnas del análisis descriptivo
+nombresdescriptivo<- list("N", "Media", "Standard Deviation", 
+                          "Variance", "Min", "Max", "Skewness", 
+                          "Kurtosis", "Jarque Bera p value")
 
-## Cambiar el formato de la fecha
-df_final$time <- as.Date(df_final$time, format = "%Y-%m-%d")
+## Crear un dataframe vacio para el summary descriptivo
+descriptivo <- data.frame(matrix(ncol = length(nombresdescriptivo), nrow = 0))
 
-## Ordenar fechas del dataframe final
-df_final <- arrange(df_final, time)
+## Cambiar los nombres de las columnas del dataframe vacío
+colnames(descriptivo) <- nombresdescriptivo
 
-## Exportar datos: .Rdat, XLSX y CSV
-save(df_final, file = "df_final.RDat")
-write.csv(df_final, file = "df_final.csv")
-write.xlsx(df_final, file = "df_final.xlsx")
+## Loop para crear el dataframe descriptivo
+for (col in colnames(rendimientos)){
+  x <- analisisdescriptivo(rendimientos[[col]])
+  descriptivo <- rbind(descriptivo, x)
+}
+
+## Cambiar el nombre de las filas por los de los activos
+rownames(descriptivo) <- nombres2
+
+
+
+
+

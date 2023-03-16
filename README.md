@@ -13,7 +13,7 @@ This repository will store my study of the cryptocurrency market efficiency that
     * Max
     * Skewness
     * Kurtosis
-    *Jarque Bera
+    * Jarque Bera
 
 ## Next Step
 * Start the mean-variance analysis

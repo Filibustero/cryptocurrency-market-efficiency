@@ -3,6 +3,17 @@ This repository will store my study of the cryptocurrency market efficiency that
 
 ## Progress
 * Reached final Data Base
+* Obtained log returns
+* Created descriptive summary: 
+    * N
+    * Mean
+    * SD
+    * Variance
+    * Min
+    * Max
+    * Skewness
+    * Kurtosis
+    *Jarque Bera
 
 ## Next Step
-* Start the efficiency analysis
+* Start the mean-variance analysis
